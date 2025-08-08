@@ -56,6 +56,7 @@ __all__ = [
     "VoteEnsemble",
     "Invert",
     "DistanceTransformEDT",
+    "ReplaceLowConfidenceWithAtlas",
 ]
 
 
