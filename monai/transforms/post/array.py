@@ -1042,7 +1042,7 @@ class ReplaceLowConfidenceWithAtlas(Transform):
         super().__init__()
         self.threshold = threshold
 
-    def __call__(self, seg_prob: torch.Tensor, atlas_name: str = "Colin") -> MetaTensor:
+    def __call__(self, seg_prob: torch.Tensor, atlas_name: str = "registered_skull_stripped_n4_bias_corrected_trans") -> MetaTensor:
         """
         Args:
             seg_prob: [C, D, H, W] tensor of segmentation probabilities or logits.
