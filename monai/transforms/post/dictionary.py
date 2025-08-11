@@ -942,11 +942,11 @@ class ReplaceLowConfidenceWithAtlasd(MapTransform):
             if seg_prob.ndim != 4:
                 raise ValueError(f"`{key}` must have 4 dimensions [C, D, H, W], got shape {seg_prob.shape}")
 
-            monai_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-            atlas_dir = os.path.join(monai_dir, "atlas")
-            atlas_path = os.path.join(monai_dir, "atlas","{self.atlas_name}.nii.gz")
+            # monai_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+            # atlas_dir = os.path.join(monai_dir, "atlas")
+            # atlas_path = os.path.join(monai_dir, "atlas","{self.atlas_name}.nii.gz")
 
-            possible_exts = [".nii.gz", ".nii"]
+            # possible_exts = [".nii.gz", ".nii"]
             # atlas_path = None
             # for ext in possible_exts:
             #     candidate = os.path.join(atlas_dir, self.atlas_name + ext)
@@ -954,10 +954,12 @@ class ReplaceLowConfidenceWithAtlasd(MapTransform):
             #         atlas_path = candidate
             #         break
 
-            if atlas_path is None:
-                raise FileNotFoundError(
-                    f"Could not find atlas '{self.atlas_name}' in {atlas_dir} with extensions {possible_exts}"
-                )
+            atlas_path = f"atlas/{self.atlas_name}.json"
+
+            # if atlas_path is None:
+            #     raise FileNotFoundError(
+            #         f"Could not find atlas '{self.atlas_name}' in {atlas_dir} with extensions {possible_exts}"
+            #     )
 
             loader = LoadImage(image_only=True)  # returns MetaTensor by default
             atlas_mask: MetaTensor = loader(atlas_path)
