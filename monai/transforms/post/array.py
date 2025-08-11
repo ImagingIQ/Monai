@@ -1030,7 +1030,7 @@ class DistanceTransformEDT(Transform):
         """
         return distance_transform_edt(img=img, sampling=self.sampling)  # type: ignore
 
-
+## Array version
 class ReplaceLowConfidenceWithAtlas(Transform):
     """
     Replace low-confidence regions in a segmentation mask with the corresponding values from an atlas.

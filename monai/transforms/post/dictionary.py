@@ -30,6 +30,7 @@ from monai.config.type_definitions import KeysCollection, NdarrayOrTensor, PathL
 from monai.data.csv_saver import CSVSaver
 from monai.data.meta_tensor import MetaTensor
 from monai.transforms.inverse import InvertibleTransform
+from monai.utils.load_atlas import load_atlas
 from monai.transforms.post.array import (
     Activations,
     AsDiscrete,
@@ -95,6 +96,7 @@ __all__ = [
     "DistanceTransformEDTd",
     "DistanceTransformEDTD",
     "DistanceTransformEDTDict",
+    "ReplaceLowConfidenceWithAtlasd",
 ]
 
 DEFAULT_POST_FIX = PostFix.meta()
@@ -912,6 +914,62 @@ class DistanceTransformEDTd(MapTransform):
 
         return d
 
+class ReplaceLowConfidenceWithAtlasd(MapTransform):
+    """
+    Dictionary-based transform to replace low-confidence segmentation outputs with atlas labels.
+
+    Args:
+        keys: Keys of the corresponding items to be transformed (e.g., "pred").
+        threshold (float): Confidence threshold. Default: 0.8.
+        atlas_name (str): Name of the atlas file to load.
+    """
+
+    def __init__(self, keys: KeysCollection, threshold: float = 0.8, atlas_name: str = "MNI305"):
+        super().__init__(keys)
+        self.threshold = threshold
+        self.atlas_name = atlas_name
+
+    def __call__(self, data):
+        d = dict(data)
+        for key in self.keys:
+            seg_prob = d[key]
+
+            if not isinstance(seg_prob, torch.Tensor):
+                raise TypeError(f"`{key}` must be a torch.Tensor or MetaTensor, got {type(seg_prob)}")
+
+            if seg_prob.ndim != 4:
+                raise ValueError(f"`{key}` must have 4 dimensions [C, D, H, W], got shape {seg_prob.shape}")
+
+            # Load atlas (assume it's a MetaTensor too)
+            atlas_mask: MetaTensor = load_atlas(self.atlas_name)
+
+            num_classes = int(atlas_mask.max().item()) + 1
+
+            # If shape doesn't match, permute to [C, D, H, W]
+            if seg_prob.shape[0] != num_classes:
+                seg_prob = seg_prob.permute(3, 0, 1, 2)
+
+            # Do everything on torch.Tensor to avoid MetaTensor metadata conflicts
+            seg_prob_data = seg_prob.as_tensor()  # remove metadata temporarily
+
+            max_prob, argmax = seg_prob_data.max(dim=0)  # [D, H, W]
+            low_conf_mask = max_prob < self.threshold
+            low_conf_mask_int = low_conf_mask.long()
+
+            atlas_data = atlas_mask.as_tensor().long()
+
+            final_tensor = low_conf_mask_int * atlas_data + (1 - low_conf_mask_int) * argmax.long()
+
+            # Return with metadata from seg_prob (or atlas)
+            final_labels = MetaTensor(
+                final_tensor,
+                affine=seg_prob.affine if isinstance(seg_prob, MetaTensor) else None,
+                meta=seg_prob.meta if isinstance(seg_prob, MetaTensor) else None
+            )
+
+            d[key] = final_labels
+
+        return d
 
 ActivationsD = ActivationsDict = Activationsd
 AsDiscreteD = AsDiscreteDict = AsDiscreted
@@ -928,3 +986,6 @@ VoteEnsembleD = VoteEnsembleDict = VoteEnsembled
 EnsembleD = EnsembleDict = Ensembled
 SobelGradientsD = SobelGradientsDict = SobelGradientsd
 DistanceTransformEDTD = DistanceTransformEDTDict = DistanceTransformEDTd
+# ReplaceLowConfidenceWithAtlasd = ReplaceLowConfidenceWithAtlasDict = ReplaceLowConfidenceWithAtlasD 
+
+
