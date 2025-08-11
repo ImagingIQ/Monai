@@ -39,7 +39,7 @@ from monai.transforms.utils import (
 )
 from monai.transforms.utils_pytorch_numpy_unification import unravel_index
 from monai.utils import TransformBackends, convert_data_type, convert_to_tensor, ensure_tuple, look_up_option
-from monai.utils.load_atlas import load_atlas
+# from monai.utils.load_atlas import load_atlas
 from monai.utils.type_conversion import convert_to_dst_type
 
 __all__ = [
@@ -1030,61 +1030,61 @@ class DistanceTransformEDT(Transform):
         """
         return distance_transform_edt(img=img, sampling=self.sampling)  # type: ignore
 
-## Array version
-class ReplaceLowConfidenceWithAtlas(Transform):
-    """
-    Replace low-confidence regions in a segmentation mask with the corresponding values from an atlas.
+# ## Array version
+# class ReplaceLowConfidenceWithAtlas(Transform):
+#     """
+#     Replace low-confidence regions in a segmentation mask with the corresponding values from an atlas.
 
-    Args:
-        threshold (float): Confidence threshold below which segmentation is considered unreliable. Default is 0.8.
-    """
+#     Args:
+#         threshold (float): Confidence threshold below which segmentation is considered unreliable. Default is 0.8.
+#     """
 
-    def __init__(self, threshold=0.8):
-        super().__init__()
-        self.threshold = threshold
+#     def __init__(self, threshold=0.8):
+#         super().__init__()
+#         self.threshold = threshold
 
-    def __call__(self, seg_prob: torch.Tensor, atlas_name: str = "registered_skull_stripped_n4_bias_corrected_trans") -> MetaTensor:
-        """
-        Args:
-            seg_prob: [C, D, H, W] tensor of segmentation probabilities or logits.
-            atlas_name: Name of the atlas to load (default is Colin).
+#     def __call__(self, seg_prob: torch.Tensor, atlas_name: str = "registered_skull_stripped_n4_bias_corrected_trans") -> MetaTensor:
+#         """
+#         Args:
+#             seg_prob: [C, D, H, W] tensor of segmentation probabilities or logits.
+#             atlas_name: Name of the atlas to load (default is Colin).
 
-        Returns:
-            final_labels: MetaTensor of shape [D, H, W] after postprocessing.
-        """
+#         Returns:
+#             final_labels: MetaTensor of shape [D, H, W] after postprocessing.
+#         """
 
-        if not isinstance(seg_prob, torch.Tensor):
-            raise TypeError(f"`seg_prob` must be a torch.Tensor, but got {type(seg_prob)}")
+#         if not isinstance(seg_prob, torch.Tensor):
+#             raise TypeError(f"`seg_prob` must be a torch.Tensor, but got {type(seg_prob)}")
 
-        if seg_prob.ndim != 4:
-            raise ValueError(f"`seg_prob` must have 4 dimensions [C, D, H, W], but got shape {seg_prob.shape}")
+#         if seg_prob.ndim != 4:
+#             raise ValueError(f"`seg_prob` must have 4 dimensions [C, D, H, W], but got shape {seg_prob.shape}")
 
-        # Load atlas as MetaTensor
-        atlas_mask: MetaTensor = load_atlas(atlas_name)
+#         # Load atlas as MetaTensor
+#         atlas_mask: MetaTensor = load_atlas(atlas_name)
 
-        num_classes = int(atlas_mask.max().item()) + 1
+#         num_classes = int(atlas_mask.max().item()) + 1
 
-        # Ensure [C, D, H, W] format
-        if seg_prob.shape[0] != num_classes:
-            seg_prob = seg_prob.permute(3, 0, 1, 2)  
+#         # Ensure [C, D, H, W] format
+#         if seg_prob.shape[0] != num_classes:
+#             seg_prob = seg_prob.permute(3, 0, 1, 2)  
 
-        print(f"Post-processing started on input: {seg_prob.shape}...")
+#         print(f"Post-processing started on input: {seg_prob.shape}...")
 
-        max_prob, argmax = seg_prob.max(dim=0)   # [D, H, W]
-        low_conf_mask = max_prob < self.threshold
+#         max_prob, argmax = seg_prob.max(dim=0)   # [D, H, W]
+#         low_conf_mask = max_prob < self.threshold
 
-        low_conf_mask_int = low_conf_mask.long()
-        final_labels_tensor = low_conf_mask_int * atlas_mask.long() + (1 - low_conf_mask_int) * argmax.long()
+#         low_conf_mask_int = low_conf_mask.long()
+#         final_labels_tensor = low_conf_mask_int * atlas_mask.long() + (1 - low_conf_mask_int) * argmax.long()
 
-        final_labels = MetaTensor(
-            final_labels_tensor,
-            affine=atlas_mask.affine if isinstance(atlas_mask, MetaTensor) else None
-        )
+#         final_labels = MetaTensor(
+#             final_labels_tensor,
+#             affine=atlas_mask.affine if isinstance(atlas_mask, MetaTensor) else None
+#         )
 
-        print("Post-processing done.")
-        print("Shape of the returned mask: ", final_labels.shape)
+#         print("Post-processing done.")
+#         print("Shape of the returned mask: ", final_labels.shape)
 
-        return final_labels
+#         return final_labels
 
 
 # transform = ReplaceLowConfidenceWithAtlas()
