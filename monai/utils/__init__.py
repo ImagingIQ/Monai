@@ -158,4 +158,4 @@ from .type_conversion import (
 # have to explicitly bring these in here to resolve circular import issues
 
 from .load_atlas import load_atlas
-# __all__ = ["load_atlas"]
+__all__ = ["load_atlas"]
