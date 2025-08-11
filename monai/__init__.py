@@ -105,6 +105,7 @@ load_submodules(sys.modules[__name__], True, exclude_pattern=excludes)
 
 __all__ = [
     "apps",
+    "atlas"
     "auto3dseg",
     "bundle",
     "config",
@@ -121,6 +122,8 @@ __all__ = [
     "utils",
     "visualize",
 ]
+
+from monai import atlas
 
 try:
     from .utils.tf32 import detect_default_tf32
