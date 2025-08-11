@@ -1,6 +1,6 @@
 import os
 import torch
-from monai.data import MetaTensor
+from monai.data.meta_tensor import MetaTensor
 import nibabel as nib 
 
 def load_atlas(atlas_name: str) -> MetaTensor:
