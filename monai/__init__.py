@@ -123,7 +123,7 @@ __all__ = [
     "visualize",
 ]
 
-from monai import atlas
+# from monai import atlas
 
 try:
     from .utils.tf32 import detect_default_tf32
