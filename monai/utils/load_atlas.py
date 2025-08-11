@@ -1,5 +1,5 @@
 import os
-from monai.transforms import LoadImage
+from monai.transforms.io.array import LoadImage
 from monai.data.meta_tensor import MetaTensor
 
 def load_atlas(atlas_name: str) -> MetaTensor:
