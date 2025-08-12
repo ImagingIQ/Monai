@@ -942,7 +942,7 @@ class ReplaceLowConfidenceWithAtlasd(MapTransform):
             if seg_prob.ndim != 4:
                 raise ValueError(f"`{key}` must have 4 dimensions [C, D, H, W], got shape {seg_prob.shape}")
 
-            monai_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+            monai_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
             atlas_dir = os.path.join(monai_dir, "atlas")
             atlas_path = os.path.join(monai_dir, "atlas",f"{self.atlas_name}.nii.gz")
 
