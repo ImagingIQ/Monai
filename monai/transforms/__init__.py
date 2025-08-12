@@ -349,6 +349,7 @@ from .post.dictionary import (
     VoteEnsembleD,
     VoteEnsembled,
     VoteEnsembleDict,
+    ReplaceLowConfidenceWithAtlasd,
 )
 from .regularization.array import CutMix, CutOut, MixUp
 from .regularization.dictionary import (
