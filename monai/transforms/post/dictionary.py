@@ -939,6 +939,9 @@ class ReplaceLowConfidenceWithAtlasd(MapTransform):
             if not isinstance(seg_prob, torch.Tensor):
                 raise TypeError(f"`{key}` must be a torch.Tensor or MetaTensor, got {type(seg_prob)}")
 
+            if seg_prob.ndim == 5:  # [B, C, D, H, W]
+                seg_prob = seg_prob.squeeze(0)  # assuming dim(0) is 1 
+
             if seg_prob.ndim != 4:
                 raise ValueError(f"`{key}` must have 4 dimensions [C, D, H, W], got shape {seg_prob.shape}")
 
