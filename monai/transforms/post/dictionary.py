@@ -974,7 +974,7 @@ class ReplaceLowConfidenceWithAtlasd(MapTransform):
                 seg_prob = seg_prob.permute(3, 0, 1, 2)
 
             # Do everything on torch.Tensor to avoid MetaTensor metadata conflicts
-            seg_prob_data = seg_prob.as_tensor()  # remove metadata temporarily
+            seg_prob_data = seg_prob  # remove metadata temporarily
 
             max_prob, argmax = seg_prob_data.max(dim=0)  # [D, H, W]
             low_conf_mask = max_prob < self.threshold
@@ -994,6 +994,69 @@ class ReplaceLowConfidenceWithAtlasd(MapTransform):
             d[key] = final_labels
 
         return d
+    
+
+# class ReplaceLowConfidenceWithAtlasd(MapTransform):
+#     """
+#     Dictionary-based transform to replace low-confidence segmentation outputs with atlas labels.
+#     Works directly on torch.Tensors (no MetaTensor).
+#     """
+
+#     def __init__(self, keys: KeysCollection, threshold: float = 0.8, atlas_name: str = "MNI305"):
+#         super().__init__(keys)
+#         self.threshold = threshold
+#         self.atlas_name = atlas_name
+
+#     def __call__(self, data):
+#         d = dict(data)
+#         for key in self.keys:
+#             seg_prob = d[key]
+
+#             if not isinstance(seg_prob, torch.Tensor):
+#                 raise TypeError(f"`{key}` must be a torch.Tensor, got {type(seg_prob)}")
+
+#             if seg_prob.ndim == 5:  # [B, C, D, H, W]
+#                 seg_prob = seg_prob.squeeze(0)  # assume batch size 1
+
+#             if seg_prob.ndim != 4:  # [C, D, H, W]
+#                 raise ValueError(f"`{key}` must have 4 dims [C, D, H, W], got {seg_prob.shape}")
+
+#             # find atlas file
+#             monai_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+#             atlas_dir = os.path.join(monai_dir, "atlas")
+
+#             atlas_path = None
+#             for ext in [".nii.gz", ".nii"]:
+#                 candidate = os.path.join(atlas_dir, self.atlas_name + ext)
+#                 if os.path.exists(candidate):
+#                     atlas_path = candidate
+#                     break
+
+#             if atlas_path is None:
+#                 raise FileNotFoundError(f"Atlas '{self.atlas_name}' not found in {atlas_dir}")
+
+#             # load atlas as numpy → torch
+#             loader = LoadImage(image_only=True)
+#             atlas_np = loader(atlas_path)  # numpy array
+#             atlas_tensor = torch.as_tensor(atlas_np, dtype=torch.long)
+
+#             num_classes = int(atlas_tensor.max().item()) + 1
+
+#             # adjust channel dim if needed
+#             if seg_prob.shape[0] != num_classes:
+#                 seg_prob = seg_prob.permute(3, 0, 1, 2)
+
+#             # compute prediction + low-confidence mask
+#             max_prob, argmax = seg_prob.max(dim=0)  # [D, H, W]
+#             low_conf_mask = max_prob < self.threshold
+
+#             # replace low confidence with atlas labels
+#             final_tensor = torch.where(low_conf_mask, atlas_tensor, argmax)
+
+#             d[key] = final_tensor.long()
+
+#         return d
+
     
 
 ActivationsD = ActivationsDict = Activationsd
