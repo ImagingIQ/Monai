@@ -37,6 +37,8 @@ from monai.transforms.utils import (
     get_unique_labels,
     remove_small_objects,
 )
+import os 
+from monai.transforms.io.array import LoadImage
 from monai.transforms.utils_pytorch_numpy_unification import unravel_index
 from monai.utils import TransformBackends, convert_data_type, convert_to_tensor, ensure_tuple, look_up_option
 # from monai.utils.load_atlas import load_atlas
@@ -1085,6 +1087,79 @@ class DistanceTransformEDT(Transform):
 #         print("Shape of the returned mask: ", final_labels.shape)
 
 #         return final_labels
+
+
+class ReplaceLowConfidenceWithAtlas(Transform):
+    """
+    Array-based transform to replace low-confidence segmentation outputs with atlas labels.
+
+    Args:
+        threshold (float): Confidence threshold. Default: 0.8.
+        atlas_name (str): Name of the atlas file to load.
+    """
+
+    def __init__(self, threshold: float = 0.8, atlas_name: str = "MNI305"):
+        self.threshold = threshold
+        self.atlas_name = atlas_name
+
+        # Resolve atlas path
+        monai_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+        atlas_dir = os.path.join(monai_dir, "atlas")
+
+        possible_exts = [".nii.gz", ".nii"]
+        atlas_path = None
+        for ext in possible_exts:
+            candidate = os.path.join(atlas_dir, self.atlas_name + ext)
+            if os.path.exists(candidate):
+                atlas_path = candidate
+                break
+
+        if atlas_path is None:
+            raise FileNotFoundError(
+                f"Could not find atlas '{self.atlas_name}' in {atlas_dir} with extensions {possible_exts}"
+            )
+
+        loader = LoadImage(image_only=True)
+        self.atlas_mask: MetaTensor = loader(atlas_path)
+
+    def __call__(self, seg_prob: torch.Tensor | np.ndarray) -> MetaTensor:
+        """
+        Args:
+            seg_prob: Segmentation probability map. Shape [C, D, H, W].
+                      Can also be [1, C, D, H, W] (batch of 1).
+        Returns:
+            A `MetaTensor` with replaced labels.
+        """
+        if not isinstance(seg_prob, (torch.Tensor, MetaTensor)):
+            seg_prob = torch.as_tensor(seg_prob)
+
+        if seg_prob.ndim == 5:  # [B, C, D, H, W]
+            seg_prob = seg_prob.squeeze(0)
+
+        if seg_prob.ndim != 4:
+            raise ValueError(f"`seg_prob` must have 4 dims [C, D, H, W], got {seg_prob.shape}")
+
+        num_classes = int(self.atlas_mask.max().item()) + 1
+
+        # Adjust channel dim if mismatch
+        if seg_prob.shape[0] != num_classes:
+            seg_prob = seg_prob.permute(3, 0, 1, 2)
+
+        seg_prob_data = seg_prob.as_tensor()  # drop metadata if MetaTensor
+
+        max_prob, argmax = seg_prob_data.max(dim=0)  # [D, H, W]
+        low_conf_mask = max_prob < self.threshold
+        low_conf_mask_int = low_conf_mask.long()
+
+        atlas_data = self.atlas_mask.as_tensor().long()
+
+        final_tensor = low_conf_mask_int * atlas_data + (1 - low_conf_mask_int) * argmax.long()
+
+        return MetaTensor(
+            final_tensor,
+            affine=seg_prob.affine if isinstance(seg_prob, MetaTensor) else None,
+            meta=seg_prob.meta if isinstance(seg_prob, MetaTensor) else None
+        )
 
 
 # transform = ReplaceLowConfidenceWithAtlas()
