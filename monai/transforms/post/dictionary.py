@@ -974,7 +974,7 @@ class ReplaceLowConfidenceWithAtlasd(MapTransform):
                 seg_prob = seg_prob.permute(3, 0, 1, 2)
 
             # Do everything on torch.Tensor to avoid MetaTensor metadata conflicts
-            seg_prob_data = seg_prob  # remove metadata temporarily
+            seg_prob_data = seg_prob.as_tensor()  # remove metadata temporarily
 
             max_prob, argmax = seg_prob_data.max(dim=0)  # [D, H, W]
             low_conf_mask = max_prob < self.threshold
