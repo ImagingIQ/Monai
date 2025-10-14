@@ -1,38 +1,91 @@
-# MONAI
+🧠 Custom MONAI — ImagingIQ Edition
 
-* **apps**: high level medical domain specific deep learning applications.
+This repository is a customized version of MONAI, enhanced with post-processing functionality for medical image segmentation pipelines.
 
-* **auto3dseg**: automated machine learning (AutoML) components for volumetric image analysis.
+🩺 Key Additions
+🔹 ReplaceLowConfidenceWithAtlasd and ReplaceLowConfidenceWithAtlas
 
-* **bundle**: components to build the portable self-descriptive model bundle.
+These two new post-processing transforms are added under:
 
-* **config**: for system configuration and diagnostic output.
+monai/transforms/post/array.py
 
-* **csrc**: for C++/CUDA extensions.
+monai/transforms/post/dictionary.py
 
-* **data**: for the datasets, readers/writers, and synthetic data.
+Purpose
 
-* **engines**: engine-derived classes for extending Ignite behaviour.
+These functions refine segmentation masks produced by the pipeline by leveraging a Colin atlas.
+They replace low-confidence regions in the predicted mask with atlas-based anatomical information, improving overall segmentation consistency and anatomical accuracy.
 
-* **fl**: federated learning components to allow pipeline integration with any federated learning framework.
+Use Case
 
-* **handlers**: defines handlers for implementing functionality at various stages in the training process.
+Ideal for brain MRI segmentation or similar volumetric tasks where anatomical priors enhance low-confidence predictions.
 
-* **inferers**: defines model inference methods.
+⚙️ Directory Overview (MONAI Core Components)
 
-* **losses**: classes defining loss functions, which follow the pattern of `torch.nn.modules.loss`.
+apps: high-level medical deep learning applications.
 
-* **metrics**: defines metric tracking types.
+auto3dseg: automated machine learning for volumetric image analysis.
 
-* **networks**: contains network definitions, component definitions, and Pytorch specific utilities.
+bundle: portable model bundle creation and management.
 
-* **optimizers**: classes defining optimizers, which follow the pattern of `torch.optim`.
+config: system configuration and diagnostic utilities.
 
-* **transforms**: defines data transforms for preprocessing and postprocessing.
+csrc: C++/CUDA extensions.
 
-* **utils**: generic utilities intended to be implemented in pure Python or using Numpy,
-and not with Pytorch, such as namespace aliasing, auto module loading.
+data: dataset loaders, readers/writers, and synthetic data.
 
-* **visualize**: utilities for data visualization.
+engines: Ignite engine extensions.
 
-* **_extensions**: C++/CUDA extensions to be loaded in a just-in-time manner using `torch.utils.cpp_extension.load`.
+fl: federated learning integration components.
+
+handlers: event-based handlers for training loops.
+
+inferers: model inference methods.
+
+losses: PyTorch-style loss function definitions.
+
+metrics: performance tracking and evaluation metrics.
+
+networks: network architectures and utilities.
+
+optimizers: optimizer definitions compatible with torch.optim.
+
+transforms: data preprocessing, augmentation, and postprocessing.
+
+utils: general-purpose utilities (non-PyTorch).
+
+visualize: visualization tools for medical imaging.
+
+_extensions: JIT-loaded C++/CUDA extensions.
+
+🚀 Installation (Developer Mode)
+
+To install this custom MONAI version with the new atlas-based postprocessing functions:
+
+# Clone the ImagingIQ custom MONAI repository
+git clone https://github.com/ImagingIQ/Monai.git
+
+# Enter the repository
+cd Monai
+
+# Install in editable (developer) mode
+pip install -e .
+
+# Return to your working directory
+cd ..
+
+✅ Verify Installation
+
+To ensure your custom MONAI installation is active:
+
+import monai
+from monai.transforms import ReplaceLowConfidenceWithAtlasd, ReplaceLowConfidenceWithAtlas
+
+print("Custom MONAI with Atlas postprocessing loaded successfully!")
+
+
+If this runs without errors, your custom version is correctly installed.
+
+📘 Reference
+
+Original MONAI project: https://github.com/Project-MONAI/MONAI
